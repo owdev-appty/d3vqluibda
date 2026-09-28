@@ -1,4 +1,5 @@
-// 文字の揃え方・名前順・入力の解析
+// 文字の揃え方・名前順・入力の解析・検索
+import { isPrefecture } from './prefectures.js';
 
 // カタカナ → ひらがな
 export const toHira = (s) => s.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
@@ -174,4 +175,40 @@ export function highlight(text, ranges, { around = 0 } = {}) {
     pos = b;
   }
   return out + esc(text.slice(pos));
+}
+
+// ---------- iPhoneメモの読み取り ----------
+// - 行が都道府県名なら Region の見出し
+// - 最初の行と、空行の次の行は Shop の見出し
+// - それ以外は人（「名前（メモ）」「名前 メモ」、＠お店 も可）
+// - カッコが閉じていない行は、次の行とつなげる（折り返し対策）
+const depth = (s) => (s.match(/[（(]/g) || []).length - (s.match(/[）)]/g) || []).length;
+const joinLines = (a, b) => a + (/[\x21-\x7e]$/.test(a) && /^[\x21-\x7e]/.test(b) ? ' ' : '') + b;
+
+export function parseNotes(text) {
+  const lines = [];
+  let buf = null;
+  for (const raw of (text || '').replace(/\r\n?/g, '\n').split('\n')) {
+    const t = raw.trim();
+    if (buf !== null) {
+      if (!t) { lines.push(buf, ''); buf = null; continue; }
+      buf = joinLines(buf, t);
+      if (depth(buf) <= 0) { lines.push(buf); buf = null; }
+      continue;
+    }
+    if (!t) { lines.push(''); continue; }
+    if (depth(t) > 0) buf = t;
+    else lines.push(t);
+  }
+  if (buf !== null) lines.push(buf);
+
+  const items = [];
+  let afterBlank = true;
+  for (const t of lines) {
+    if (!t) { afterBlank = true; continue; }
+    const kind = isPrefecture(t) ? 'region' : afterBlank ? 'shop' : 'person';
+    items.push({ kind, text: t });
+    afterBlank = false;
+  }
+  return items;
 }

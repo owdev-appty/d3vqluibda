@@ -343,3 +343,6 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
 .toolbar .chips { gap: 5px; }
 .toolbar .chip { padding: 0 11px; font-size: 14.5px; }
 .toolbar .segment button { padding: 0 10px; font-size: 14.5px; }
+.import-lead { font-size: 15px; margin: 4px 0 14px; line-height: 1.7; }
+.import-tip { margin-top: 8px; }
+.pv-row.heading .hint { flex: none; }
