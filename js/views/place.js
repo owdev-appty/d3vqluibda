@@ -50,8 +50,7 @@ export default function placeView(root, { params, query }) {
     <div class="quick-pad"></div>
     <div class="quick-add">
       <form autocomplete="off">
-        <input type="text" name="q" enterkeyhint="done" aria-label="Add person"
-          placeholder="${isRegion ? 'みきさん（帽子）@屋台' : 'さきさん（めがね）'}">
+        <input type="text" name="q" size="1" enterkeyhint="done" aria-label="Add person">
         <button type="submit" class="add-btn" aria-label="Add" disabled>${icon('plus')}</button>
       </form>
       <p class="hint">${isRegion ? '＠のあとにお店名を書くとお店で分類されます（省略OK）' : '名前（特徴）の形で入力。カッコ内はメモに入ります'}</p>

@@ -1,6 +1,6 @@
 // Shop / Region の登録・編集
 import * as store from '../store.js';
-import { esc } from '../text.js';
+import { esc, norm } from '../text.js';
 import { confirmModal, sheet } from '../ui.js';
 import { go, back, placeHash, redirect } from '../nav.js';
 import { PREF_GROUPS, QUICK_PREFS, shortPref } from '../prefectures.js';
@@ -122,19 +122,33 @@ export default function placeEdit(root, { params, path }) {
       case 'prefs': return pickPrefecture();
       case 'cancel': return isNew ? back('#/') : back(placeHash(existing.id));
       case 'delete': return remove();
-      case 'save': {
-        if (!v.name.trim()) return;
-        if (isNew) {
-          const place = store.addPlace(v);
-          // 保存後はその場所の画面へ。すぐ人を追加できるように入力欄にフォーカス
-          go(`${placeHash(place.id)}?new=1`, { replace: true });
-        } else {
-          store.updatePlace(existing.id, v);
-          back(placeHash(existing.id));
-        }
-      }
+      case 'save': return save();
     }
   });
+
+  // 同じ名前の場所があれば確認（新規登録と、名前を変えて保存したとき）
+  async function save() {
+    const name = v.name.trim();
+    if (!name) return;
+    const renamed = !isNew && norm(name) !== norm(existing.name.trim());
+    if ((isNew || renamed) && store.findSameNamePlace(name, existing?.id)) {
+      const ok = await confirmModal({
+        title: `"${name}" already exists.`,
+        body: [isNew ? 'Add it anyway?' : 'Save it anyway?'],
+        confirmLabel: isNew ? 'Add anyway' : 'Save anyway',
+        tone: 'primary',
+      });
+      if (!ok) return;
+    }
+    if (isNew) {
+      const place = store.addPlace(v);
+      // 保存後はその場所の画面へ。すぐ人を追加できるように入力欄にフォーカス
+      go(`${placeHash(place.id)}?new=1`, { replace: true });
+    } else {
+      store.updatePlace(existing.id, v);
+      back(placeHash(existing.id));
+    }
+  }
 
   draw();
   if (isNew) root.querySelector('#f-name').focus();

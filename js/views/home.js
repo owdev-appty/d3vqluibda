@@ -15,7 +15,7 @@ export default function home(root) {
   root.innerHTML = `
     <div class="home-head">
       <h1>${LOGO}People list</h1>
-      <button type="button" class="icon-btn" data-act="settings" aria-label="Settings">${icon('gear')}${store.backupDue() ? '<span class="dot"></span>' : ''}</button>
+      <button type="button" class="icon-btn" data-act="settings" aria-label="Settings">${icon('gear')}</button>
     </div>
     <button type="button" class="search-bar" data-act="search">${icon('search')}<span>Search</span></button>
     <div class="toolbar">
@@ -48,7 +48,7 @@ export default function home(root) {
     if (!places.length) {
       list.innerHTML = store.totals().places
         ? '<p class="empty">この絞り込みには場所がありません</p>'
-        : '<p class="empty">まだ場所がありません。<br>右下の「+ Add」から、お店や行った県を登録できます。</p>';
+        : '<p class="empty">まだ場所がありません。<br>右下の「+ Add」から、お店や行ったエリアを登録できます。</p>';
       foot.innerHTML = '';
       return;
     }

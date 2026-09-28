@@ -1,6 +1,6 @@
 // データの読み書きはすべてこのモジュールを通す。
 // 画面側は state を直接書き換えず、ここの関数を使うこと（将来のAI機能もここに足す）。
-import { compareByName } from './text.js';
+import { compareByName, norm } from './text.js';
 
 const KEY = 'people.v1';
 export const CATEGORIES = ['居酒屋', 'バー', '立ち飲み', 'その他'];
@@ -142,6 +142,13 @@ export const totals = () => ({ places: state.places.length, people: state.people
 export function findPlaceByName(name) {
   const n = name.trim();
   return state.places.find((p) => p.name === n) || null;
+}
+
+// 同じ名前の場所（検索と同じ揃え方：かな・全角半角・大小文字・前後の空白を無視）。excludeId は自分自身。
+export function findSameNamePlace(name, excludeId = null) {
+  const n = norm(name).trim();
+  if (!n) return null;
+  return state.places.find((p) => p.id !== excludeId && norm(p.name).trim() === n) || null;
 }
 
 // ---------- 場所 ----------

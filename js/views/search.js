@@ -11,7 +11,7 @@ export default function search(root) {
     <div class="search-head">
       <label class="search-field">
         ${icon('search')}
-        <input type="search" enterkeyhint="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search">
+        <input type="search" size="1" enterkeyhint="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search">
         <button type="button" class="clear-btn hidden" aria-label="Clear">${icon('x')}</button>
       </label>
       <button type="button" class="link-btn" data-act="close">Close</button>
