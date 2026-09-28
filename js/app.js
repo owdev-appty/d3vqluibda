@@ -6,6 +6,7 @@ import place from './views/place.js';
 import placeEdit from './views/placeEdit.js';
 import person from './views/person.js';
 import search from './views/search.js';
+import settings from './views/settings.js';
 
 setRoutes([
   [/^\/$/, home],
@@ -14,6 +15,7 @@ setRoutes([
   [/^\/new$/, placeEdit],
   [/^\/person\/([^/?]+)$/, person],
   [/^\/search$/, search],
+  [/^\/settings$/, settings],
 ]);
 
 store.onError(() => toast('保存できませんでした（端末の空き容量を確認してください）'));
