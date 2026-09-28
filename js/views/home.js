@@ -1,7 +1,7 @@
 // People list（ホーム）
 import * as store from '../store.js';
 import { esc } from '../text.js';
-import { icon, LOGO } from '../ui.js';
+import { icon, LOGO, makeSortable } from '../ui.js';
 import { go, placeHash } from '../nav.js';
 
 let filter = 'all'; // 画面を離れても覚えておく
@@ -24,6 +24,10 @@ export default function home(root) {
         <button type="button" class="chip" data-filter="shops">Shops</button>
         <button type="button" class="chip" data-filter="regions">Regions</button>
       </div>
+      <div class="segment" role="group" aria-label="Sort">
+        <button type="button" data-sort="custom">Custom</button>
+        <button type="button" data-sort="name">Name</button>
+      </div>
     </div>
     <div class="place-list"></div>
     <div class="list-foot"></div>
@@ -32,9 +36,12 @@ export default function home(root) {
 
   const list = root.querySelector('.place-list');
   const foot = root.querySelector('.list-foot');
+  let sortable = null;
 
   function draw() {
+    const custom = store.getSettings().sortMode === 'custom';
     root.querySelectorAll('[data-filter]').forEach((b) => b.classList.toggle('on', b.dataset.filter === filter));
+    root.querySelectorAll('[data-sort]').forEach((b) => b.classList.toggle('on', b.dataset.sort === store.getSettings().sortMode));
     const places = store.placesInOrder().filter((p) =>
       filter === 'all' || (filter === 'shops' ? p.type === 'shop' : p.type === 'region'));
 
@@ -58,21 +65,28 @@ export default function home(root) {
             </div>
             ${sub ? `<div class="sub">${esc(sub)}</div>` : ''}
           </div>
+          ${custom ? `<span class="grip" aria-label="並び替え">${icon('grip')}</span>` : ''}
         </div>`;
     }).join('');
-    foot.innerHTML = '';
+    foot.innerHTML = custom && places.length > 1 ? '<p class="hint">≡ を押さえたまま動かすと並び替え</p>' : '';
+    sortable?.option('disabled', !custom);
   }
 
   root.addEventListener('click', (e) => {
     const f = e.target.closest('[data-filter]');
     if (f) { filter = f.dataset.filter; draw(); return; }
+    const so = e.target.closest('[data-sort]');
+    if (so) { store.setSortMode(so.dataset.sort); draw(); return; }
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'settings') return go('#/settings');
     if (act === 'search') return go('#/search');
     if (act === 'add') return go('#/new');
     const card = e.target.closest('.place-card');
-    if (card) go(placeHash(card.dataset.id));
+    if (card && !e.target.closest('.grip') && !sortable?.justDragged()) go(placeHash(card.dataset.id));
   });
 
+  // Custom のときだけ、≡ のつまみでドラッグして並び替え（順番は保存）
+  sortable = makeSortable(list, (ids) => store.reorderPlaces(ids));
   draw();
+  return () => sortable?.destroy();
 }

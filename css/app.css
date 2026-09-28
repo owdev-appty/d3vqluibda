@@ -338,3 +338,8 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
 .sheet-actions button { width: 100%; min-height: 48px; border-radius: 12px; background: var(--region-btn); color: #fff; font-weight: 700; font-size: 17px; }
 .pref-chips { gap: 6px; }
 .pref-chips .chip { padding: 0 12px; }
+/* ホームの絞り込み＋並び順を1行に収める */
+.toolbar { gap: 6px; }
+.toolbar .chips { gap: 5px; }
+.toolbar .chip { padding: 0 11px; font-size: 14.5px; }
+.toolbar .segment button { padding: 0 10px; font-size: 14.5px; }

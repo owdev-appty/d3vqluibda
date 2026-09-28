@@ -1,7 +1,7 @@
 // Shop / Region の画面：人の一覧とクイック追加
 import * as store from '../store.js';
 import { esc, parsePersonLine } from '../text.js';
-import { icon } from '../ui.js';
+import { icon, makeSortable } from '../ui.js';
 import { go, placeHash, redirect } from '../nav.js';
 
 const subFilters = new Map(); // Regionの絞り込み（場所ごとに覚えておく）
@@ -89,6 +89,7 @@ export default function placeView(root, { params, query }) {
           <div class="pname"><span>${esc(person.name)}</span>${isRegion && link.subShop ? `<span class="sub-tag">${esc(link.subShop)}</span>` : ''}</div>
           ${person.notes ? `<div class="pnotes">${linkify(person.notes, id)}</div>` : ''}
         </div>
+        <span class="grip" aria-label="並び替え">${icon('grip')}</span>
       </div>`).join('');
     if (flashId) listEl.querySelector('.flash')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
@@ -102,7 +103,7 @@ export default function placeView(root, { params, query }) {
     const chip = e.target.closest('[data-sub]');
     if (chip) { sub = chip.dataset.sub; subFilters.set(id, sub); drawChips(); drawPeople(); return; }
     const row = e.target.closest('.person-row');
-    if (row && !e.target.closest('.grip')) go(`#/person/${encodeURIComponent(row.dataset.id)}?from=${encodeURIComponent(id)}`);
+    if (row && !e.target.closest('.grip') && !sortable?.justDragged()) go(`#/person/${encodeURIComponent(row.dataset.id)}?from=${encodeURIComponent(id)}`);
   });
 
   // iOSでは keydown が当てにならないので input イベントで状態を更新する
@@ -131,6 +132,9 @@ export default function placeView(root, { params, query }) {
   }
   if (vv) { vv.addEventListener('resize', placeBar); vv.addEventListener('scroll', placeBar); }
 
+  // ≡ のつまみでドラッグして並び替え（場所ごとに保存）
+  const sortable = makeSortable(listEl, (ids) => store.reorderPeople(id, ids));
+
   drawChips();
   drawPeople();
   if (query.get('new') === '1') {
@@ -139,6 +143,7 @@ export default function placeView(root, { params, query }) {
   }
 
   return () => {
+    sortable?.destroy();
     if (vv) { vv.removeEventListener('resize', placeBar); vv.removeEventListener('scroll', placeBar); }
   };
 }
