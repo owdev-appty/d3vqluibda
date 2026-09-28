@@ -71,3 +71,107 @@ export function parsePersonLine(input, { at = false } = {}) {
   }
   return { name, notes, subShop };
 }
+
+// ---------- 検索 ----------
+// 同義語リスト：同じグループの言葉はまとめて検索します。ここに1行足せば反映されます。
+// （カタカナ・全角・大文字の違いは自動で揃うので、ひらがなと漢字を並べれば十分）
+export const SYNONYMS = [
+  ['めがね', '眼鏡'],
+  ['ひげ', '髭', '鬚'],
+  ['ぼうし', '帽子'],
+  ['しらが', '白髪'],
+  ['きもの', '着物'],
+  ['たばこ', '煙草'],
+  ['ねこ', '猫'],
+  ['いぬ', '犬'],
+  ['だんな', '旦那'],
+  ['おくさん', '奥さん'],
+  ['ふうふ', '夫婦'],
+  ['すし', '寿司', '鮨'],
+  ['にほんしゅ', '日本酒'],
+  ['おーなー', '店主'],
+  ['たいしょう', '大将'],
+  ['じょうれん', '常連'],
+];
+const SYN = SYNONYMS.map((g) => [...new Set(g.map(norm))]);
+
+// 検索語をそろえ、同義語に置き換えたパターンも作る
+export function expandTerm(term) {
+  const n = norm(term).trim();
+  const out = new Set(n ? [n] : []);
+  if (!n) return [];
+  for (const group of SYN) {
+    for (const m of group) {
+      if (!n.includes(m)) continue;
+      for (const o of group) if (o !== m) out.add(n.split(m).join(o));
+    }
+  }
+  return [...out];
+}
+
+// 入力を空白で区切った語ごとのパターン（すべての語に当てはまるものを探す）
+export const parseQuery = (q) => (q || '').split(/\s+/).filter(Boolean).map(expandTerm).filter((v) => v.length);
+
+// 揃えた文字列と、元の文字の位置の対応表
+function normWithMap(s) {
+  let out = '';
+  const start = [];
+  const end = [];
+  let i = 0;
+  for (const ch of s) {
+    const n = norm(ch);
+    for (let k = 0; k < n.length; k++) { start.push(i); end.push(i + ch.length); }
+    out += n;
+    i += ch.length;
+  }
+  return { out, start, end };
+}
+
+// text の中で、パターンに当たる範囲（元の文字列の位置）
+export function findRanges(text, termsList) {
+  if (!text) return [];
+  const { out, start, end } = normWithMap(text);
+  const ranges = [];
+  for (const variants of termsList) {
+    for (const v of variants) {
+      let from = 0;
+      let idx;
+      while (v && (idx = out.indexOf(v, from)) >= 0) {
+        ranges.push([start[idx], end[idx + v.length - 1]]);
+        from = idx + 1;
+      }
+    }
+  }
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  for (const r of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
+    else merged.push([...r]);
+  }
+  return merged;
+}
+
+export const matchesAll = (text, termsList) => {
+  const n = norm(text);
+  return termsList.every((variants) => variants.some((v) => n.includes(v)));
+};
+
+// ヒット部分を <mark> で囲んだHTML。around を指定すると最初のヒットの少し前から切り出す。
+export function highlight(text, ranges, { around = 0 } = {}) {
+  let from = 0;
+  let prefix = '';
+  if (around && ranges.length && ranges[0][0] > around) {
+    from = ranges[0][0] - around;
+    prefix = '…';
+  }
+  let out = prefix;
+  let pos = from;
+  for (const [a, b] of ranges) {
+    if (b <= from) continue;
+    const s = Math.max(a, from);
+    out += esc(text.slice(pos, s)) + `<mark>${esc(text.slice(s, b))}</mark>`;
+    pos = b;
+  }
+  return out + esc(text.slice(pos));
+}
