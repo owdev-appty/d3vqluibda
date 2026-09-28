@@ -359,14 +359,14 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
 .pnotes.clamp3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 
 /* Edit person の Add place / お店名 */
-.add-new-row { color: var(--shop-link); gap: 8px; }
-.add-new-row .icon { width: 20px; height: 20px; }
-.new-place { padding: 4px 0 12px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
-.new-place .segment.wide { margin-bottom: 12px; }
-.new-place .input { margin-bottom: 10px; }
-.new-place .pref-chips { margin: 0 0 12px; }
-.new-place .sheet-actions { margin-top: 4px; }
-.sheet-actions button.shop { background: var(--shop-btn); }
+.sheet-body .segment.wide { margin-bottom: 12px; }
+.picker-search { margin-bottom: 8px; }
+.picker-search::-webkit-search-cancel-button { -webkit-appearance: none; }
+.pick-row .added-tag { margin-left: auto; flex: none; font-size: 13px; color: var(--text-hint); border: 1px solid var(--input-border); border-radius: 8px; padding: 0 8px; line-height: 1.8; }
+.pick-row .pick-sub { color: var(--region-text); font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-row:disabled { opacity: .45; cursor: default; }
+.pick-row:disabled:active { background: none; }
+.place-chip .label-btn .subshop-add { color: var(--text-note); font-size: 14px; margin-left: 6px; }
 .sheet-actions button:disabled { opacity: .4; }
 .sub-choices { margin-bottom: 12px; }
 .chip .chip-icon { width: 16px; height: 16px; margin-right: 4px; }
