@@ -42,7 +42,7 @@ export default function placeEdit(root, { params, path }) {
       ${!isRegion ? `
         <div class="field">
           <label for="f-reading">Reading<span class="opt">optional・漢字の店名だけ</span></label>
-          <input id="f-reading" class="input" name="reading" value="${esc(v.reading)}" autocomplete="off" placeholder="しなのや">
+          <input id="f-reading" class="input" name="reading" value="${esc(v.reading)}" autocomplete="off" placeholder="よみがな">
           <p class="hint">Name順で並べるときに使います</p>
         </div>
         <div class="field">

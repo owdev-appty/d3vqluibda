@@ -25,7 +25,7 @@ export default function personEdit(root, { params, query }) {
     </div>
     <div class="field">
       <label for="p-full">Full name<span class="opt">optional</span></label>
-      <input id="p-full" class="input" name="fullName" value="${esc(v.fullName)}" autocomplete="off" placeholder="山本 五郎（やまもと ごろう）">
+      <input id="p-full" class="input" name="fullName" value="${esc(v.fullName)}" autocomplete="off" placeholder="山田 花子（やまだ はなこ）">
     </div>
     <div class="field">
       <label for="p-notes">Notes</label>
