@@ -45,7 +45,13 @@ export default function placeView(root, { params, query }) {
       ${place.notes ? `<div class="notes-box">${linkify(place.notes, id)}</div>` : ''}
     </div>
     ${isRegion ? '<div class="filter-chips" role="group" aria-label="Filter by shop"></div>' : ''}
-    <div class="section-title">People here<span class="count"></span></div>
+    <div class="section-row">
+      <div class="section-title">People here<span class="count"></span></div>
+      <div class="segment" role="group" aria-label="Sort people">
+        <button type="button" data-psort="custom">Custom</button>
+        <button type="button" data-psort="newest">Newest</button>
+      </div>
+    </div>
     <div class="people-list"></div>
     <div class="quick-pad"></div>
     <div class="quick-add">
@@ -75,7 +81,11 @@ export default function placeView(root, { params, query }) {
   }
 
   function drawPeople(flashId) {
-    const all = store.peopleAt(id);
+    const mode = store.getSettings().peopleSortMode;
+    const custom = mode === 'custom';
+    root.querySelectorAll('[data-psort]').forEach((b) => b.classList.toggle('on', b.dataset.psort === mode));
+    sortable?.option('disabled', !custom);
+    const all = store.peopleAt(id, mode);
     countEl.textContent = all.length;
     const rows = sub === 'all' ? all : all.filter(({ link }) => link.subShop === sub);
     if (!rows.length) {
@@ -86,9 +96,9 @@ export default function placeView(root, { params, query }) {
       <div class="person-row ${person.id === flashId ? 'flash' : ''}" data-id="${esc(person.id)}">
         <div class="body">
           <div class="pname"><span>${esc(person.name)}</span>${isRegion && link.subShop ? `<span class="sub-tag">${esc(link.subShop)}</span>` : ''}</div>
-          ${person.notes ? `<div class="pnotes">${linkify(person.notes, id)}</div>` : ''}
+          ${person.notes ? `<div class="pnotes clamp3">${linkify(person.notes, id)}</div>` : ''}
         </div>
-        <span class="grip" aria-label="並び替え">${icon('grip')}</span>
+        ${custom ? `<span class="grip" aria-label="並び替え">${icon('grip')}</span>` : ''}
       </div>`).join('');
     if (flashId) listEl.querySelector('.flash')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
@@ -101,6 +111,8 @@ export default function placeView(root, { params, query }) {
     if (link) return go(placeHash(link.dataset.place));
     const chip = e.target.closest('[data-sub]');
     if (chip) { sub = chip.dataset.sub; subFilters.set(id, sub); drawChips(); drawPeople(); return; }
+    const ps = e.target.closest('[data-psort]');
+    if (ps) { store.setPeopleSortMode(ps.dataset.psort); drawPeople(); return; }
     const row = e.target.closest('.person-row');
     if (row && !e.target.closest('.grip') && !sortable?.justDragged()) go(`#/person/${encodeURIComponent(row.dataset.id)}?from=${encodeURIComponent(id)}`);
   });
@@ -131,7 +143,7 @@ export default function placeView(root, { params, query }) {
   }
   if (vv) { vv.addEventListener('resize', placeBar); vv.addEventListener('scroll', placeBar); }
 
-  // ≡ のつまみでドラッグして並び替え（場所ごとに保存）
+  // Custom のときだけ、≡ のつまみでドラッグして並び替え（場所ごとに保存）
   const sortable = makeSortable(listEl, (ids) => store.reorderPeople(id, ids));
 
   drawChips();

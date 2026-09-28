@@ -1,8 +1,8 @@
 // Service Worker: オフライン起動用のキャッシュ。
 // 更新するときは VERSION を上げる（js/version.js と合わせる）。古いキャッシュは activate で消える。
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const CACHE = `people-app-${VERSION}`;
-const FONT_CACHE = 'people-fonts';
+const FONT_CACHE = 'people-fonts-v2';
 
 const ASSETS = [
   './',
@@ -42,7 +42,8 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(
-        keys.filter((k) => k.startsWith('people-app-') && k !== CACHE).map((k) => caches.delete(k))
+        // 古いアプリのキャッシュと、使わなくなったフォントのキャッシュを消す
+        keys.filter((k) => k.startsWith('people-') && k !== CACHE && k !== FONT_CACHE).map((k) => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );

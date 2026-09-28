@@ -9,7 +9,7 @@ let state = null;
 const errorHandlers = new Set();
 
 function emptyState() {
-  return { version: 1, places: [], people: [], settings: { sortMode: 'custom', lastBackupAt: null } };
+  return { version: 1, places: [], people: [], settings: { sortMode: 'custom', peopleSortMode: 'custom', lastBackupAt: null } };
 }
 
 function uid() {
@@ -19,6 +19,11 @@ function uid() {
 
 const str = (v) => (typeof v === 'string' ? v : '');
 const num = (v, fallback) => (Number.isFinite(v) ? v : fallback);
+const isDate = (v) => typeof v === 'string' && !isNaN(Date.parse(v));
+const nowISO = () => new Date().toISOString();
+
+// addedAt がない古いデータ用：データ上の登録順（people配列・linksの順）で、実際の日時より古い日時を割り当てる
+const LEGACY_BASE = Date.UTC(2000, 0, 1);
 
 // 読み込んだ／復元するデータを検査して整える。形が違えば例外。
 export function sanitize(raw) {
@@ -47,6 +52,7 @@ export function sanitize(raw) {
 
   const seenPeople = new Set();
   const people = [];
+  let legacy = 0;
   raw.people.forEach((p) => {
     if (!p || typeof p.id !== 'string' || seenPeople.has(p.id) || !str(p.name).trim()) return;
     const linked = new Set();
@@ -54,7 +60,13 @@ export function sanitize(raw) {
     (Array.isArray(p.links) ? p.links : []).forEach((l, i) => {
       if (!l || !seenPlaces.has(l.placeId) || linked.has(l.placeId)) return;
       linked.add(l.placeId);
-      links.push({ placeId: l.placeId, order: num(l.order, i), subShop: str(l.subShop).trim() });
+      links.push({
+        placeId: l.placeId,
+        order: num(l.order, i),
+        subShop: str(l.subShop).trim(),
+        addedAt: isDate(l.addedAt) ? l.addedAt : new Date(LEGACY_BASE + legacy * 1000).toISOString(),
+      });
+      legacy++;
     });
     if (!links.length) return;
     seenPeople.add(p.id);
@@ -68,7 +80,8 @@ export function sanitize(raw) {
     people,
     settings: {
       sortMode: s.sortMode === 'name' ? 'name' : 'custom',
-      lastBackupAt: typeof s.lastBackupAt === 'string' && !isNaN(Date.parse(s.lastBackupAt)) ? s.lastBackupAt : null,
+      peopleSortMode: s.peopleSortMode === 'newest' ? 'newest' : 'custom',
+      lastBackupAt: isDate(s.lastBackupAt) ? s.lastBackupAt : null,
     },
   };
 }
@@ -77,6 +90,8 @@ export function load() {
   try {
     const raw = localStorage.getItem(KEY);
     state = raw ? sanitize(JSON.parse(raw)) : emptyState();
+    // 補完した値（addedAt など）を保存しておく
+    if (raw && JSON.stringify(state) !== raw) commit();
   } catch (e) {
     console.error(e);
     state = emptyState();
@@ -112,14 +127,20 @@ export function placesInOrder(mode = state.settings.sortMode) {
   return arr;
 }
 
-// その場所にいる人（場所ごとの並び順）。[{ person, link }]
-export function peopleAt(placeId) {
+// その場所にいる人。[{ person, link }]
+// mode 'custom'：手動の並び順 / 'newest'：その場所に登録した日時が新しい順（同じ日時ならデータ上あとの人が上）
+export function peopleAt(placeId, mode = 'custom') {
   const out = [];
-  for (const person of state.people) {
+  state.people.forEach((person, index) => {
     const link = person.links.find((l) => l.placeId === placeId);
-    if (link) out.push({ person, link });
+    if (link) out.push({ person, link, index });
+  });
+  if (mode === 'newest') {
+    out.sort((a, b) => Date.parse(b.link.addedAt) - Date.parse(a.link.addedAt) || b.index - a.index);
+  } else {
+    out.sort((a, b) => a.link.order - b.link.order);
   }
-  return out.sort((a, b) => a.link.order - b.link.order);
+  return out;
 }
 
 export const countAt = (placeId) => state.people.filter((p) => p.links.some((l) => l.placeId === placeId)).length;
@@ -219,14 +240,14 @@ export function addPerson(data, placeId, subShop = '') {
     name: str(data.name).trim(),
     fullName: str(data.fullName).trim(),
     notes: str(data.notes).trim(),
-    links: [{ placeId, order: nextOrderAt(placeId), subShop: str(subShop).trim() }],
+    links: [{ placeId, order: nextOrderAt(placeId), subShop: str(subShop).trim(), addedAt: nowISO() }],
   };
   state.people.push(person);
   commit();
   return person;
 }
 
-// links: [{ placeId, subShop }]（順番は既存のものを引き継ぎ、新しい場所では末尾）
+// links: [{ placeId, subShop }]（順番と登録日時は既存のものを引き継ぎ、新しい場所では末尾・今の日時）
 export function updatePerson(id, data, links) {
   const person = getPerson(id);
   if (!person) return null;
@@ -236,7 +257,9 @@ export function updatePerson(id, data, links) {
   if (links && links.length) {
     person.links = links.map(({ placeId, subShop }) => {
       const old = person.links.find((l) => l.placeId === placeId);
-      return { placeId, order: old ? old.order : nextOrderAt(placeId), subShop: str(subShop).trim() };
+      return old
+        ? { placeId, order: old.order, subShop: str(subShop).trim(), addedAt: old.addedAt }
+        : { placeId, order: nextOrderAt(placeId), subShop: str(subShop).trim(), addedAt: nowISO() };
     });
   }
   commit();
@@ -252,6 +275,12 @@ export function deletePerson(id) {
 
 export function setSortMode(mode) {
   state.settings.sortMode = mode === 'name' ? 'name' : 'custom';
+  commit();
+}
+
+// People here の並び順（全場所共通）
+export function setPeopleSortMode(mode) {
+  state.settings.peopleSortMode = mode === 'newest' ? 'newest' : 'custom';
   commit();
 }
 
@@ -294,7 +323,12 @@ export function importGroups(groups) {
       if (existing.some(({ person }) => person.name === pname && person.notes === notes)) continue;
       const person = {
         id: uid(), name: pname, fullName: '', notes,
-        links: [{ placeId: place.id, order: nextOrderAt(place.id), subShop: place.type === 'region' ? (p.subShop || '').trim() : '' }],
+        links: [{
+          placeId: place.id,
+          order: nextOrderAt(place.id),
+          subShop: place.type === 'region' ? (p.subShop || '').trim() : '',
+          addedAt: nowISO(),
+        }],
       };
       state.people.push(person);
       existing.push({ person, link: person.links[0] });

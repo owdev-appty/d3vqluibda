@@ -1,9 +1,9 @@
 // Shop / Region の登録・編集
 import * as store from '../store.js';
 import { esc, norm } from '../text.js';
-import { confirmModal, sheet } from '../ui.js';
+import { confirmModal, pickPrefecture } from '../ui.js';
 import { go, back, placeHash, redirect } from '../nav.js';
-import { PREF_GROUPS, QUICK_PREFS, shortPref } from '../prefectures.js';
+import { QUICK_PREFS } from '../prefectures.js';
 
 export default function placeEdit(root, { params, path }) {
   const isNew = path === '/new';
@@ -78,19 +78,6 @@ export default function placeEdit(root, { params, path }) {
     sync();
   }
 
-  function pickPrefecture() {
-    sheet('47都道府県', (body, close) => {
-      body.innerHTML = PREF_GROUPS.map(([label, list]) => `
-        <div class="pref-group"><p class="hint">${label}</p>
-          <div class="pref-grid">${list.map((p) => `<button type="button" class="chip region" data-p="${shortPref(p)}">${shortPref(p)}</button>`).join('')}</div>
-        </div>`).join('');
-      body.addEventListener('click', (e) => {
-        const b = e.target.closest('[data-p]');
-        if (b) { setName(b.dataset.p); close(); }
-      });
-    });
-  }
-
   async function remove() {
     const n = store.peopleOnlyAt(existing.id).length;
     const ok = await confirmModal({
@@ -119,7 +106,7 @@ export default function placeEdit(root, { params, path }) {
     }
     if (t.dataset.pref) return setName(t.dataset.pref);
     switch (t.dataset.act) {
-      case 'prefs': return pickPrefecture();
+      case 'prefs': return pickPrefecture(setName);
       case 'cancel': return isNew ? back('#/') : back(placeHash(existing.id));
       case 'delete': return remove();
       case 'save': return save();

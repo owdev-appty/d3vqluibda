@@ -1,5 +1,6 @@
 // 共通の見た目の部品：線のアイコン、確認モーダル、シート、トースト
 import { esc } from './text.js';
+import { PREF_GROUPS, shortPref } from './prefectures.js';
 
 const PATHS = {
   back: '<path d="M15 5l-7 7 7 7"/>',
@@ -65,6 +66,20 @@ export function sheet(title, build) {
   overlay.querySelector('[data-close]').addEventListener('click', close);
   build(overlay.querySelector('.sheet-body'), close);
   return close;
+}
+
+// 47都道府県から選ぶシート。選んだ名前（「福岡」など）を onPick に渡す。
+export function pickPrefecture(onPick) {
+  sheet('47都道府県', (body, close) => {
+    body.innerHTML = PREF_GROUPS.map(([label, list]) => `
+      <div class="pref-group"><p class="hint">${label}</p>
+        <div class="pref-grid">${list.map((p) => `<button type="button" class="chip region" data-p="${shortPref(p)}">${shortPref(p)}</button>`).join('')}</div>
+      </div>`).join('');
+    body.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-p]');
+      if (b) { close(); onPick(b.dataset.p); }
+    });
+  });
 }
 
 let toastTimer;
