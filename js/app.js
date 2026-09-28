@@ -1,12 +1,38 @@
-import { VERSION } from './version.js';
+import * as store from './store.js';
+import { toast } from './ui.js';
+import { setRoutes, start } from './nav.js';
+import home from './views/home.js';
+import place from './views/place.js';
+import placeEdit from './views/placeEdit.js';
+import person from './views/person.js';
 
-const app = document.getElementById('app');
-app.innerHTML = `
-  <div class="home-head">
-    <h1><svg viewBox="0 0 64 48" aria-hidden="true"><circle cx="14" cy="17" r="7.5"/><circle cx="50" cy="17" r="7.5"/><circle cx="32" cy="12" r="9"/><path d="M3 46C3 36 7 29 15 28C18 28 19 30 18 32C15 37 14 41 14 46Z"/><path d="M61 46C61 36 57 29 49 28C46 28 45 30 46 32C49 37 50 41 50 46Z"/><path d="M17 46C17 34 23 25 32 25C41 25 47 34 47 46Z"/></svg>People list</h1>
-  </div>
-  <p class="empty">準備中です（v${VERSION}）</p>`;
+setRoutes([
+  [/^\/$/, home],
+  [/^\/place\/([^/?]+)$/, place],
+  [/^\/place\/([^/?]+)\/edit$/, placeEdit],
+  [/^\/new$/, placeEdit],
+  [/^\/person\/([^/?]+)$/, person],
+]);
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
+store.onError(() => toast('保存できませんでした（端末の空き容量を確認してください）'));
+store.load();
+start();
+
+// ローカル確認時（localhost）は、?sw を付けたときだけ Service Worker を使う（古いキャッシュで混乱しないように）
+const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+if ('serviceWorker' in navigator && (!isLocal || location.search.includes('sw'))) {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    // ホーム画面から戻ってきたときに更新を確認
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    });
+  }).catch(() => {});
+  // 新しいバージョンが有効になったら1回だけ再読み込み
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    reloading = true;
+    location.reload();
+  });
 }

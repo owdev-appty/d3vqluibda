@@ -181,7 +181,6 @@ body.dragging { user-select: none; -webkit-user-select: none; }
 .person-row .pnotes { color: var(--text-note); font-size: 15px; margin-top: 2px; word-break: break-word; white-space: pre-wrap; }
 .sub-tag { display: inline-flex; background: var(--region-label-bg); color: var(--region-text); font-size: 13px; font-weight: 500; padding: 0 8px; border-radius: 6px; line-height: 1.8; }
 .place-link { color: var(--shop-link); text-decoration: underline; text-underline-offset: 3px; }
-.region-page .place-link { color: var(--region-text); }
 
 .quick-pad { height: 120px; }
 .quick-add {
@@ -334,3 +333,8 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
   opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 200; max-width: calc(100% - 40px); text-align: center;
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
+.sheet-body .chips { margin-bottom: 4px; }
+.sheet-actions { margin-top: 16px; }
+.sheet-actions button { width: 100%; min-height: 48px; border-radius: 12px; background: var(--region-btn); color: #fff; font-weight: 700; font-size: 17px; }
+.pref-chips { gap: 6px; }
+.pref-chips .chip { padding: 0 12px; }

@@ -1,6 +1,6 @@
 // Service Worker: オフライン起動用のキャッシュ。
 // 更新するときは VERSION を上げる（js/version.js と合わせる）。古いキャッシュは activate で消える。
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const CACHE = `people-app-${VERSION}`;
 const FONT_CACHE = 'people-fonts';
 
@@ -11,6 +11,15 @@ const ASSETS = [
   'css/app.css',
   'js/app.js',
   'js/version.js',
+  'js/nav.js',
+  'js/store.js',
+  'js/text.js',
+  'js/ui.js',
+  'js/prefectures.js',
+  'js/views/home.js',
+  'js/views/place.js',
+  'js/views/placeEdit.js',
+  'js/views/person.js',
   'vendor/Sortable.min.js',
   'icons/icon.svg',
   'icons/icon-180.png',
