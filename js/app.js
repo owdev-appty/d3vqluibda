@@ -1,6 +1,6 @@
 import * as store from './store.js';
 import { toast, alertModal } from './ui.js';
-import { setRoutes, start } from './nav.js';
+import { setRoutes, start, requestReload } from './nav.js';
 import home from './views/home.js';
 import place from './views/place.js';
 import placeEdit from './views/placeEdit.js';
@@ -40,11 +40,9 @@ if ('serviceWorker' in navigator && (!isLocal || location.search.includes('sw'))
       if (document.visibilityState === 'visible') reg.update().catch(() => {});
     });
   }).catch(() => {});
-  // 新しいバージョンが有効になったら1回だけ再読み込み
-  let reloading = false;
+  // 新しいバージョンが有効になったら、次に画面を移るときに1回だけ再読み込み。
+  // すぐに再読み込みすると、編集中の入力が消えてしまうため。
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController || reloading) return;
-    reloading = true;
-    location.reload();
+    if (hadController) requestReload();
   });
 }

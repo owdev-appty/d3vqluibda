@@ -74,6 +74,7 @@ export default function settings(root) {
   }
 
   // iPhoneでは共有メニュー（Web Share API）で「ファイル」に保存。使えなければダウンロード。
+  // Last backup を更新するのは、共有が完了したときとダウンロードにしたとき。共有をキャンセルしたときは更新しない。
   async function exportBackup() {
     const now = new Date();
     const file = new File([store.exportJSON()], `people-backup-${ymd(now)}.json`, { type: 'application/json' });

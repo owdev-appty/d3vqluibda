@@ -50,7 +50,8 @@ export function confirmModal({ title, body = [], note = '', confirmLabel = 'Dele
       </div>`, { onBackdrop: () => done(false) });
     function done(v) { close(); resolve(v); }
     overlay.querySelectorAll('[data-r]').forEach((b) => b.addEventListener('click', () => done(b.dataset.r === '1')));
-    overlay.querySelector('[data-r="1"]').focus({ preventScroll: true });
+    // 最初のフォーカスは Cancel（ないときは OK）に。削除ボタンを誤って押さないように
+    (overlay.querySelector('[data-r="0"]') || overlay.querySelector('[data-r="1"]')).focus({ preventScroll: true });
   });
 }
 

@@ -69,7 +69,7 @@ export default function personEdit(root, { params, query }) {
   function pickSubShop(region, current, onDone) {
     const known = store.subShopsOf(region.id);
     if (current && !known.includes(current)) known.push(current);
-    let selected = current || '';
+    let selected = current || ''; // チップで選んでいるお店名（None は空）
     sheet(region.name, (body, close) => {
       body.innerHTML = `
         <div class="chips sub-choices">
@@ -87,8 +87,6 @@ export default function personEdit(root, { params, query }) {
         b.classList.toggle('on', box.classList.contains('hidden') && b.dataset.s === selected));
       markChips();
 
-      // iOSでは keydown ではなく input イベントで値を受け取る
-      input.addEventListener('input', () => { selected = input.value; });
       body.addEventListener('click', (e) => {
         const s = e.target.closest('[data-s]');
         if (s) {
@@ -100,14 +98,15 @@ export default function personEdit(root, { params, query }) {
         }
         if (e.target.closest('[data-new]')) {
           box.classList.remove('hidden');
-          selected = input.value;
           markChips();
           input.focus();
           return;
         }
         if (e.target.closest('[data-done]')) {
+          // Add new に入力があればその名前、空ならチップで選んでいたものをそのまま使う
           // 前後の空白を除いて既存のお店名と同じなら、そのお店として扱う
-          const value = selected.trim();
+          const typed = box.classList.contains('hidden') ? '' : input.value.trim();
+          const value = typed || selected.trim();
           close();
           onDone(known.find((k) => k.trim() === value) || value);
         }

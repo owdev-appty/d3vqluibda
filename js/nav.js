@@ -8,6 +8,10 @@ let current = { hash: null, cleanup: null };
 
 export function setRoutes(list) { routes = list; }
 
+// 新しいバージョンが有効になったら、入力中の画面を消さないよう、次に画面を移るときに再読み込みする
+let reloadPending = false;
+export function requestReload() { reloadPending = true; }
+
 function parseHash() {
   const raw = location.hash.replace(/^#/, '') || '/';
   const i = raw.indexOf('?');
@@ -16,6 +20,7 @@ function parseHash() {
 }
 
 export function render({ restoreScroll = false } = {}) {
+  if (reloadPending) { location.reload(); return; } // URL はもう移動先になっている
   if (current.hash !== null) scrollPos.set(current.hash, window.scrollY);
   if (current.cleanup) current.cleanup();
   current.cleanup = null;
@@ -26,7 +31,15 @@ export function render({ restoreScroll = false } = {}) {
   let params = [];
   for (const [re, fn] of routes) {
     const m = path.match(re);
-    if (m) { view = fn; params = m.slice(1).map(decodeURIComponent); break; }
+    if (m) {
+      try {
+        params = m.slice(1).map(decodeURIComponent);
+        view = fn;
+      } catch {
+        view = null; // URL の % の並びが壊れているときはホームへ
+      }
+      break;
+    }
   }
   if (!view) { history.replaceState(null, '', '#/'); render(); return; }
 

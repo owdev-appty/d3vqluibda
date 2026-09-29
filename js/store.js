@@ -64,7 +64,8 @@ export function sanitize(raw) {
         placeId: l.placeId,
         order: num(l.order, i),
         subShop: str(l.subShop).trim(),
-        addedAt: isDate(l.addedAt) ? l.addedAt : new Date(LEGACY_BASE + legacy * 1000).toISOString(),
+        // 日時として読めるものは ISO 形式にそろえる（値は変えない）。読めなければ古い扱いの日時を割り当てる
+        addedAt: isDate(l.addedAt) ? new Date(l.addedAt).toISOString() : new Date(LEGACY_BASE + legacy * 1000).toISOString(),
       });
       legacy++;
     });
