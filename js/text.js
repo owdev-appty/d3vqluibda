@@ -38,12 +38,25 @@ export function compareByName(a, b) {
 // ---------- 「名前（メモ）＠お店」の解析 ----------
 // - 全角・半角のカッコどちらも可。カッコ内がメモ（閉じカッコの後ろに文字があればメモに続ける）
 // - カッコがなければ最初の空白（全角・半角）で 名前 / メモ に分ける
-// - at: true のとき、最後の ＠/@ 以降をお店名（subShop）にする
+// - at: true のとき、カッコの外にある最後の ＠/@ 以降をお店名（subShop）にする（カッコ内の＠はメモの一部）
+//   カッコが閉じていないときは、以前どおり最後の ＠/@ で分ける
+function lastAtOutsideParens(s) {
+  let depth = 0;
+  let found = -1;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '（' || c === '(') depth++;
+    else if ((c === '）' || c === ')') && depth > 0) depth--;
+    else if ((c === '@' || c === '＠') && depth === 0) found = i;
+  }
+  return depth > 0 ? Math.max(s.lastIndexOf('@'), s.lastIndexOf('＠')) : found;
+}
+
 export function parsePersonLine(input, { at = false } = {}) {
   let s = (input || '').trim();
   let subShop = '';
   if (at) {
-    const i = Math.max(s.lastIndexOf('@'), s.lastIndexOf('＠'));
+    const i = lastAtOutsideParens(s);
     if (i >= 0) {
       subShop = s.slice(i + 1).trim();
       s = s.slice(0, i).trim();
@@ -114,16 +127,24 @@ export function expandTerm(term) {
 export const parseQuery = (q) => (q || '').split(/\s+/).filter(Boolean).map(expandTerm).filter((v) => v.length);
 
 // 揃えた文字列と、元の文字の位置の対応表
+// 半角カナの濁点・半濁点（ｶﾞ など）は前の文字とまとめて揃える（全体を揃えたときと同じ結果になるように）
+const VOICED_MARK = /[\uFF9E\uFF9F\u3099\u309A]/;
 function normWithMap(s) {
+  const units = [];
+  let i = 0;
+  for (const ch of s) {
+    const last = units[units.length - 1];
+    if (last && VOICED_MARK.test(ch)) last.text += ch;
+    else units.push({ text: ch, at: i });
+    i += ch.length;
+  }
   let out = '';
   const start = [];
   const end = [];
-  let i = 0;
-  for (const ch of s) {
-    const n = norm(ch);
-    for (let k = 0; k < n.length; k++) { start.push(i); end.push(i + ch.length); }
+  for (const u of units) {
+    const n = norm(u.text);
+    for (let k = 0; k < n.length; k++) { start.push(u.at); end.push(u.at + u.text.length); }
     out += n;
-    i += ch.length;
   }
   return { out, start, end };
 }
@@ -188,16 +209,20 @@ const joinLines = (a, b) => a + (/[\x21-\x7e]$/.test(a) && /^[\x21-\x7e]/.test(b
 export function parseNotes(text) {
   const lines = [];
   let buf = null;
+  let prevBlank = true; // 最初の行と空行の次の行は見出しの候補
   for (const raw of (text || '').replace(/\r\n?/g, '\n').split('\n')) {
     const t = raw.trim();
     if (buf !== null) {
-      if (!t) { lines.push(buf, ''); buf = null; continue; }
+      if (!t) { lines.push(buf, ''); buf = null; prevBlank = true; continue; }
       buf = joinLines(buf, t);
       if (depth(buf) <= 0) { lines.push(buf); buf = null; }
       continue;
     }
-    if (!t) { lines.push(''); continue; }
-    if (depth(t) > 0) buf = t;
+    if (!t) { lines.push(''); prevBlank = true; continue; }
+    // 見出しの候補の行は、カッコが閉じていなくても次の行とつなげない（下の人の行を飲み込まないように）
+    const heading = prevBlank || isPrefecture(t);
+    prevBlank = false;
+    if (!heading && depth(t) > 0) buf = t;
     else lines.push(t);
   }
   if (buf !== null) lines.push(buf);

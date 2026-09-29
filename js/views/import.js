@@ -65,10 +65,13 @@ export default function importView(root) {
     listEl.classList.toggle('hidden', !items.length);
 
     let seenHeading = false;
+    // 人が入る先の種類。同じ名前の場所が登録済みならその種類（Shop にはお店名が入らない）
+    let destType = null;
     listEl.innerHTML = items.map((it, i) => {
       if (it.kind !== 'person') {
         seenHeading = true;
         const exists = store.findPlaceByName(it.text);
+        destType = exists ? exists.type : it.kind;
         return `
           <div class="pv-row heading">
             <button type="button" class="kind-btn" data-i="${i}" aria-label="Change type">
@@ -81,7 +84,7 @@ export default function importView(root) {
       const p = parsePersonLine(it.text, { at: true });
       return `
         <div class="pv-row ${seenHeading ? '' : 'orphan'}">
-          <span class="who">${esc(p.name)}${p.subShop ? ` <span class="sub-tag">${esc(p.subShop)}</span>` : ''}</span>
+          <span class="who">${esc(p.name)}${p.subShop && destType === 'region' ? ` <span class="sub-tag">${esc(p.subShop)}</span>` : ''}</span>
           <span class="what">${esc(p.notes)}</span>
           <button type="button" class="kind-btn" data-i="${i}" aria-label="Change type"><span class="person-label">Person</span></button>
         </div>`;
