@@ -201,6 +201,10 @@ export function subShopsOf(placeId) {
   return [...seen];
 }
 
+// Region でそのお店名が付いている人数
+export const subShopCount = (placeId, name) =>
+  state.people.filter((p) => p.links.some((l) => l.placeId === placeId && l.subShop === name)).length;
+
 // その場所にしか登録されていない人（場所を消すと一緒に消える人）
 export const peopleOnlyAt = (placeId) =>
   state.people.filter((p) => p.links.length === 1 && p.links[0].placeId === placeId);
@@ -313,6 +317,18 @@ export function updatePerson(id, data, links) {
   }
   commit();
   return person;
+}
+
+// Region のお店名を消す：そのお店名が付いている全員からお店名を外す（人は消さない。addedAt・並び順もそのまま）
+export function removeSubShop(placeId, name) {
+  let n = 0;
+  for (const p of state.people) {
+    for (const l of p.links) {
+      if (l.placeId === placeId && l.subShop === name) { l.subShop = ''; n++; }
+    }
+  }
+  commit();
+  return n;
 }
 
 export function deletePerson(id) {

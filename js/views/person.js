@@ -72,22 +72,51 @@ export default function personEdit(root, { params, query }) {
     let selected = current || ''; // チップで選んでいるお店名（None は空）
     sheet(region.name, (body, close) => {
       body.innerHTML = `
-        <div class="chips sub-choices">
-          <button type="button" class="chip region" data-s="">None</button>
-          ${known.map((s) => `<button type="button" class="chip region" data-s="${esc(s)}">${esc(s)}</button>`).join('')}
-          <button type="button" class="chip dashed" data-new>${icon('plus', 'chip-icon')}Add new</button>
-        </div>
+        <div class="chips sub-choices"></div>
         <div class="new-sub hidden">
           <input class="input" placeholder="お店の名前" autocomplete="off" aria-label="New shop name">
         </div>
         <div class="sheet-actions"><button type="button" data-done>Done</button></div>`;
       const box = body.querySelector('.new-sub');
       const input = box.querySelector('input');
+      const chipsEl = body.querySelector('.sub-choices');
       const markChips = () => body.querySelectorAll('[data-s]').forEach((b) =>
-        b.classList.toggle('on', box.classList.contains('hidden') && b.dataset.s === selected));
-      markChips();
+        b.closest('.chip').classList.toggle('on', box.classList.contains('hidden') && b.dataset.s === selected));
+      // 既存のお店名のチップには × を付ける（そのお店名を Region から消す）
+      function drawChips() {
+        chipsEl.innerHTML = `
+          <button type="button" class="chip region" data-s="">None</button>
+          ${known.map((s) => `
+            <span class="chip region sub-chip">
+              <button type="button" class="sub-pick" data-s="${esc(s)}">${esc(s)}</button>
+              <button type="button" class="sub-x" data-del="${esc(s)}" aria-label="Delete ${esc(s)}">${icon('x')}</button>
+            </span>`).join('')}
+          <button type="button" class="chip dashed" data-new>${icon('plus', 'chip-icon')}Add new</button>`;
+        markChips();
+      }
+      drawChips();
+
+      // お店名を消す：確認のあと、その Region でそのお店名が付いている全員から外す（すぐに保存）
+      async function removeName(name) {
+        const n = store.subShopCount(region.id, name);
+        const ok = await confirmModal({
+          title: `Delete "${name}"?`,
+          body: [`${n} ${n === 1 ? 'person' : 'people'} in ${region.name} will have no shop name.`, "This can't be undone."],
+          note: 'People will not be deleted.',
+        });
+        if (!ok) return;
+        store.removeSubShop(region.id, name);
+        known.splice(known.indexOf(name), 1);
+        if (selected === name) selected = '';
+        // 編集中のこの人のつながりにも反映（Save で元に戻らないように）
+        links.forEach((l) => { if (l.placeId === region.id && l.subShop === name) l.subShop = ''; });
+        drawPlaces();
+        drawChips();
+      }
 
       body.addEventListener('click', (e) => {
+        const del = e.target.closest('[data-del]');
+        if (del) return removeName(del.dataset.del);
         const s = e.target.closest('[data-s]');
         if (s) {
           selected = s.dataset.s;

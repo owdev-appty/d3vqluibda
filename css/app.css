@@ -368,3 +368,11 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
   opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 200; max-width: calc(100% - 40px); text-align: center;
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* お店名のシート：既存のお店名のチップ（選ぶ部分と × に分ける） */
+.chip.sub-chip { padding: 0 0 0 14px; }
+.chip.sub-chip::after { display: none; }
+.sub-chip .sub-pick, .sub-chip .sub-x { position: relative; min-height: 36px; display: inline-flex; align-items: center; color: inherit; }
+.sub-chip .sub-pick::after, .sub-chip .sub-x::after { content: ''; position: absolute; inset: -4px 0; }
+.sub-chip .sub-x { width: 34px; justify-content: center; }
+.sub-chip .sub-x .icon { width: 15px; height: 15px; stroke-width: 2.4; }
