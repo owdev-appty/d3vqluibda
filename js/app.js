@@ -1,5 +1,5 @@
 import * as store from './store.js';
-import { toast } from './ui.js';
+import { toast, alertModal } from './ui.js';
 import { setRoutes, start } from './nav.js';
 import home from './views/home.js';
 import place from './views/place.js';
@@ -20,9 +20,15 @@ setRoutes([
   [/^\/import$/, importView],
 ]);
 
-store.onError(() => toast('保存できませんでした（端末の空き容量を確認してください）'));
+store.onError((e) => toast(e.message === 'readonly'
+  ? '保存データを読み込めなかったため、保存を止めています'
+  : '保存できませんでした（端末の空き容量を確認してください）'));
 store.load();
 start();
+if (store.isReadOnly()) {
+  // 元のデータは消さずに残してある（アプリの更新で読めるようになる場合もある）
+  alertModal("Can't load data", '保存データを読み込めませんでした。元のデータは消さずに残してあります。アプリを開き直すか、Settings の「Restore from backup」から復元してください。');
+}
 
 // ローカル確認時（localhost）は、?sw を付けたときだけ Service Worker を使う（古いキャッシュで混乱しないように）
 const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);

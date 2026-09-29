@@ -86,15 +86,56 @@ export function sanitize(raw) {
   };
 }
 
+// 読み込めなかった元のデータ／整える前の元のデータの退避先（people.v1 とは別のキー）
+const UNREADABLE_KEY = `${KEY}.unreadable`;
+const BEFORE_CLEANUP_KEY = `${KEY}.before-cleanup`;
+
+// 保存データを読み込めなかったとき true。元のデータを上書きしないよう保存を止める（Restore で解除）
+let readOnly = false;
+export const isReadOnly = () => readOnly;
+
+// 整えたときに取り除かれた項目があるか（addedAt の補完など、足すだけの変更は含めない）
+function droppedSomething(raw, clean) {
+  const linkCount = (people) => people.reduce((n, p) => n + (Array.isArray(p?.links) ? p.links.length : 0), 0);
+  return raw.places.length !== clean.places.length
+    || raw.people.length !== clean.people.length
+    || linkCount(raw.people) !== linkCount(clean.people);
+}
+
 export function load() {
+  let raw = null;
   try {
-    const raw = localStorage.getItem(KEY);
-    state = raw ? sanitize(JSON.parse(raw)) : emptyState();
-    // 補完した値（addedAt など）を保存しておく
-    if (raw && JSON.stringify(state) !== raw) commit();
+    raw = localStorage.getItem(KEY);
   } catch (e) {
     console.error(e);
+  }
+  if (!raw) {
     state = emptyState();
+    return state;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+    state = sanitize(parsed);
+  } catch (e) {
+    // 壊れている・新しい形式など：空で起動するが、元のデータは消さずに退避し、保存を止める
+    console.error(e);
+    try { localStorage.setItem(UNREADABLE_KEY, raw); } catch (e2) { console.error(e2); }
+    readOnly = true;
+    state = emptyState();
+    return state;
+  }
+  if (JSON.stringify(state) !== raw) {
+    // 補完した値（addedAt など）を保存しておく。取り除いた項目があれば、先に元のデータを退避する
+    if (droppedSomething(parsed, state)) {
+      try {
+        localStorage.setItem(BEFORE_CLEANUP_KEY, raw);
+      } catch (e) {
+        console.error(e);
+        return state; // 退避できないときは上書きしない（画面には整えたデータを表示）
+      }
+    }
+    commit();
   }
   return state;
 }
@@ -103,6 +144,11 @@ export function load() {
 export function onError(fn) { errorHandlers.add(fn); }
 
 function commit() {
+  if (readOnly) {
+    const e = new Error('readonly');
+    errorHandlers.forEach((fn) => fn(e));
+    return false;
+  }
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
     return true;
@@ -292,10 +338,12 @@ export function markBackup(date = new Date()) {
 }
 
 // 復元：検査済みのデータで全部置き換える。バックアップ日時は今の端末の値を残す。
+// 読み込めなかったデータ（退避済み）があるときも、復元すれば保存を再開する。
 export function replaceAll(data) {
   const clean = sanitize(data);
   clean.settings.lastBackupAt = state.settings.lastBackupAt || clean.settings.lastBackupAt;
   state = clean;
+  readOnly = false;
   commit();
 }
 
