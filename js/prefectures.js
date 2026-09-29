@@ -9,7 +9,7 @@ export const PREF_GROUPS = [
   ['九州・沖縄', ['福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県']],
 ];
 
-export const PREFECTURES = PREF_GROUPS.flatMap(([, list]) => list);
+const PREFECTURES = PREF_GROUPS.flatMap(([, list]) => list);
 
 // 「福岡県」→「福岡」、「東京都」→「東京」、「京都府」→「京都」
 export const shortPref = (p) => (p === '北海道' ? p : p.replace(/[都府県]$/, ''));

@@ -64,6 +64,9 @@ svg.icon { width: 22px; height: 22px; flex: none; stroke: currentColor; fill: no
 .display-name { font-weight: 800; }
 .hidden { display: none !important; }
 
+/* ステータスバーの裏の帯：スクロールした内容がこの下に隠れる（モーダルの暗い背景はこの上に重なる） */
+.statusbar-bg { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 90; pointer-events: none; }
+
 #app {
   padding: calc(var(--safe-top) + 20px) calc(var(--safe-right) + var(--gutter)) calc(var(--safe-bottom) + 32px) calc(var(--safe-left) + var(--gutter));
   max-width: 640px;
@@ -89,7 +92,7 @@ svg.icon { width: 22px; height: 22px; flex: none; stroke: currentColor; fill: no
 .home-head { display: flex; align-items: center; justify-content: space-between; margin: 12px 0 16px; }
 .home-head h1 { display: flex; align-items: center; gap: 12px; font-size: 28px; font-weight: 700; margin: 0; }
 .home-head h1 svg { width: 40px; height: 30px; fill: var(--text); }
-.icon-btn { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-sub); position: relative; }
+.icon-btn { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-sub); }
 .icon-btn .icon { width: 26px; height: 26px; }
 
 .search-bar {
@@ -98,7 +101,7 @@ svg.icon { width: 22px; height: 22px; flex: none; stroke: currentColor; fill: no
   background: var(--card); border: 1px solid var(--border);
   color: var(--text-note); font-size: 17px; text-align: left;
 }
-.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 0 14px; flex-wrap: wrap; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 14px 0 14px; flex-wrap: wrap; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip {
   min-height: 36px; padding: 0 14px; border-radius: 999px;
@@ -119,6 +122,11 @@ svg.icon { width: 22px; height: 22px; flex: none; stroke: currentColor; fill: no
 .segment.wide { display: flex; width: 100%; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
 .segment.wide button { flex: 1; min-height: 44px; font-size: 17px; border-radius: 9px; }
 .segment.wide button.on.region { background: var(--region-label-bg); color: var(--region-text); }
+
+/* ホームの絞り込み＋並び順を1行に収める */
+.toolbar .chips { gap: 5px; }
+.toolbar .chip { padding: 0 11px; font-size: 14.5px; }
+.toolbar .segment button { padding: 0 10px; font-size: 14.5px; }
 
 .place-list { display: flex; flex-direction: column; gap: 10px; }
 .place-card {
@@ -172,12 +180,19 @@ body.dragging { user-select: none; -webkit-user-select: none; }
 .section-title { font-size: 15px; font-weight: 500; color: var(--text-sub); margin: 22px 0 8px; }
 .section-title .count { font-weight: 400; margin-left: 4px; font-size: 15px; }
 
+/* People here の見出し＋並び順 */
+.section-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 8px; }
+.section-row .section-title { margin: 0; }
+.section-row .segment button { padding: 0 10px; font-size: 14.5px; }
+
 .people-list { background: var(--card); border-radius: 16px; overflow: hidden; }
 .person-row { display: flex; align-items: center; gap: 4px; padding: 12px 8px 12px 20px; min-height: 64px; border-top: 1px solid var(--divider); cursor: pointer; background: var(--card); }
 .person-row:first-child { border-top: 0; }
 .person-row .body { flex: 1; min-width: 0; }
 .person-row .pname { font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; word-break: break-all; }
 .person-row .pnotes { color: var(--text-note); font-size: 15px; margin-top: 2px; word-break: break-word; white-space: pre-wrap; }
+/* Notes は最大3行（改行も1行に数える）。4行目以降は「…」で省略 */
+.pnotes.clamp3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 .sub-tag { display: inline-flex; background: var(--region-label-bg); color: var(--region-text); font-size: 13px; font-weight: 500; padding: 0 8px; border-radius: 6px; line-height: 1.8; }
 .place-link { color: var(--shop-link); text-decoration: underline; text-underline-offset: 3px; }
 
@@ -220,16 +235,22 @@ body.dragging { user-select: none; -webkit-user-select: none; }
 ::placeholder { color: var(--text-hint); opacity: 1; }
 .field .hint { margin-top: 6px; }
 .field .chips { margin-top: 10px; }
+.pref-chips .chip { padding: 0 12px; }
 
 .place-chip { min-height: 40px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--shop-chip-bg); color: var(--shop-chip-text); font-size: 16px; padding: 0 4px 0 16px; }
 .place-chip.region { background: var(--region-label-bg); color: var(--region-text); }
 .place-chip .label-btn { min-height: 40px; display: inline-flex; align-items: center; gap: 6px; }
 .place-chip .label-btn .subshop { opacity: .8; font-size: 14px; }
+.place-chip .label-btn .subshop-add { color: var(--text-note); font-size: 14px; margin-left: 6px; }
 .place-chip .x { width: 36px; height: 40px; display: inline-flex; align-items: center; justify-content: center; }
 .place-chip .x .icon { width: 16px; height: 16px; stroke-width: 2.6; }
 .place-chip.solo { padding-right: 16px; }
 .add-place-btn { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px dashed var(--input-border); color: var(--text-note); display: inline-flex; align-items: center; gap: 6px; font-size: 16px; }
 .add-place-btn .icon { width: 18px; height: 18px; }
+
+/* 見た目は 40px のまま、タップ範囲を 44px に広げる */
+.pill-btn, .place-chip .label-btn, .place-chip .x, .add-place-btn { position: relative; }
+.pill-btn::after, .place-chip .label-btn::after, .place-chip .x::after, .add-place-btn::after { content: ''; position: absolute; inset: -2px 0; }
 
 .danger-soft {
   width: 100%; min-height: 52px; border-radius: 12px; margin-top: 36px;
@@ -273,6 +294,8 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
 
 /* ---------- 取り込み ---------- */
 .import-text { min-height: 180px; }
+.import-lead { font-size: 15px; margin: 4px 0 14px; line-height: 1.7; }
+.import-tip { margin-top: 8px; }
 .preview-head { display: flex; justify-content: space-between; align-items: baseline; margin: 22px 0 8px; }
 .preview-head .t { font-weight: 500; font-size: 15px; color: var(--text-sub); }
 .preview-head .count { font-size: 14px; }
@@ -281,11 +304,11 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
 .pv-row:first-child { border-top: 0; }
 .pv-row.heading { padding-left: 16px; }
 .pv-row .pv-name { font-weight: 800; font-size: 22px; flex: 1; min-width: 0; word-break: break-all; }
+.pv-row.heading .hint { flex: none; }
 .pv-row .who { font-weight: 700; font-size: 16px; width: 40%; flex: none; word-break: break-all; }
 .pv-row .what { color: var(--text-note); font-size: 15px; flex: 1; min-width: 0; word-break: break-word; }
 .kind-btn { min-height: 44px; display: inline-flex; align-items: center; flex: none; }
 .kind-btn .person-label { display: inline-flex; border: 1px solid var(--input-border); color: var(--text-hint); font-size: 12px; padding: 0 8px; border-radius: 8px; line-height: 1.8; }
-.pv-row.orphan .who::before { content: ''; }
 .pv-warn { color: var(--region-text); font-size: 13px; padding: 10px 20px; border-top: 1px solid var(--divider); }
 .import-pad { height: 100px; }
 .bottom-action {
@@ -319,9 +342,21 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
 .sheet-head h2 { font-size: 17px; margin: 0; }
 .sheet-body { overflow-y: auto; padding: 12px 16px 16px; -webkit-overflow-scrolling: touch; }
 .sheet-body .input { margin-bottom: 12px; }
+.sheet-body .chips { margin-bottom: 4px; }
+.sheet-body .segment.wide { margin-bottom: 12px; }
+.new-sub .input { margin-bottom: 0; }
+.sheet-actions { margin-top: 16px; }
+.sheet-actions button { width: 100%; min-height: 48px; border-radius: 12px; background: var(--region-btn); color: #fff; font-weight: 500; font-size: 17px; }
 .pick-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 8px; border-radius: 10px; text-align: left; font-size: 17px; }
 .pick-row:active { background: var(--seg-on); }
 .pick-row .display-name { font-size: 19px; }
+.pick-row .added-tag { margin-left: auto; flex: none; font-size: 13px; color: var(--text-hint); border: 1px solid var(--input-border); border-radius: 8px; padding: 0 8px; line-height: 1.8; }
+.pick-row .pick-sub { color: var(--region-text); font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-row:disabled { opacity: .45; cursor: default; }
+.pick-row:disabled:active { background: none; }
+.picker-search::-webkit-search-cancel-button { -webkit-appearance: none; }
+.chip .chip-icon { width: 16px; height: 16px; margin-right: 4px; }
+.list-empty { padding: 12px 8px; }
 .pref-group { margin-bottom: 12px; }
 .pref-group .hint { margin: 4px 0 6px; }
 .pref-grid { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -333,46 +368,3 @@ mark { background: var(--hit-bg); color: var(--hit-text); border-radius: 4px; pa
   opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 200; max-width: calc(100% - 40px); text-align: center;
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
-.sheet-body .chips { margin-bottom: 4px; }
-.sheet-actions { margin-top: 16px; }
-.sheet-actions button { width: 100%; min-height: 48px; border-radius: 12px; background: var(--region-btn); color: #fff; font-weight: 500; font-size: 17px; }
-.pref-chips { gap: 6px; }
-.pref-chips .chip { padding: 0 12px; }
-/* ホームの絞り込み＋並び順を1行に収める */
-.toolbar { gap: 6px; }
-.toolbar .chips { gap: 5px; }
-.toolbar .chip { padding: 0 11px; font-size: 14.5px; }
-.toolbar .segment button { padding: 0 10px; font-size: 14.5px; }
-.import-lead { font-size: 15px; margin: 4px 0 14px; line-height: 1.7; }
-.import-tip { margin-top: 8px; }
-.pv-row.heading .hint { flex: none; }
-
-/* ステータスバーの裏の帯：スクロールした内容がこの下に隠れる（モーダルの暗い背景はこの上に重なる） */
-.statusbar-bg { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 90; pointer-events: none; }
-
-/* People here の見出し＋並び順 */
-.section-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 8px; }
-.section-row .section-title { margin: 0; }
-.section-row .segment button { padding: 0 10px; font-size: 14.5px; }
-
-/* Notes は最大3行（改行も1行に数える）。4行目以降は「…」で省略 */
-.pnotes.clamp3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
-
-/* Edit person の Add place / お店名 */
-.sheet-body .segment.wide { margin-bottom: 12px; }
-.picker-search { margin-bottom: 8px; }
-.picker-search::-webkit-search-cancel-button { -webkit-appearance: none; }
-.pick-row .added-tag { margin-left: auto; flex: none; font-size: 13px; color: var(--text-hint); border: 1px solid var(--input-border); border-radius: 8px; padding: 0 8px; line-height: 1.8; }
-.pick-row .pick-sub { color: var(--region-text); font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pick-row:disabled { opacity: .45; cursor: default; }
-.pick-row:disabled:active { background: none; }
-.place-chip .label-btn .subshop-add { color: var(--text-note); font-size: 14px; margin-left: 6px; }
-.sheet-actions button:disabled { opacity: .4; }
-.sub-choices { margin-bottom: 12px; }
-.chip .chip-icon { width: 16px; height: 16px; margin-right: 4px; }
-.new-sub .input { margin-bottom: 0; }
-.list-empty { padding: 12px 8px; }
-
-/* 見た目は 40px のまま、タップ範囲を 44px に広げる */
-.pill-btn, .place-chip .label-btn, .place-chip .x, .add-place-btn { position: relative; }
-.pill-btn::after, .place-chip .label-btn::after, .place-chip .x::after, .add-place-btn::after { content: ''; position: absolute; inset: -2px 0; }

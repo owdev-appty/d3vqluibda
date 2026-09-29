@@ -207,12 +207,14 @@ export const peopleOnlyAt = (placeId) =>
 
 export const totals = () => ({ places: state.places.length, people: state.people.length });
 
+// 名前が完全に一致する場所（メモからの取り込み用。取り込みは表記ゆれを区別する仕様）
 export function findPlaceByName(name) {
   const n = name.trim();
   return state.places.find((p) => p.name === n) || null;
 }
 
 // 同じ名前の場所（検索と同じ揃え方：かな・全角半角・大小文字・前後の空白を無視）。excludeId は自分自身。
+// 場所の登録・名前変更での重複確認に使う。
 export function findSameNamePlace(name, excludeId = null) {
   const n = norm(name).trim();
   if (!n) return null;

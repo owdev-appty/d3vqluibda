@@ -2,7 +2,7 @@
 import { isPrefecture } from './prefectures.js';
 
 // カタカナ → ひらがな
-export const toHira = (s) => s.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+const toHira = (s) => s.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 
 // 比較用に揃える：全角→半角（NFKC）、大文字→小文字、カタカナ→ひらがな
 export const norm = (s) => toHira((s || '').normalize('NFKC').toLowerCase());
@@ -22,7 +22,7 @@ function groupOf(ch) {
   return 3;
 }
 
-export function nameKey(place) {
+function nameKey(place) {
   return norm(place.reading || place.name).trim();
 }
 
@@ -110,7 +110,7 @@ export const SYNONYMS = [
 const SYN = SYNONYMS.map((g) => [...new Set(g.map(norm))]);
 
 // 検索語をそろえ、同義語に置き換えたパターンも作る
-export function expandTerm(term) {
+function expandTerm(term) {
   const n = norm(term).trim();
   const out = new Set(n ? [n] : []);
   if (!n) return [];
